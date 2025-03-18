@@ -1,0 +1,30 @@
+#define PORT 8080
+ #define BUFFER_SIZE 1024
+ #include "wraping.c“
+ void  str_cli(FILE *fp, int sockfd)
+ {
+ char  sendline[MAXLINE], recvline[MAXLINE];
+ while (Fgets(sendline, MAXLINE, fp) != NULL) {
+ Writen(sockfd, sendline, strlen(sendline));
+ 0)
+ if (Readline(sockfd, recvline, MAXLINE) == 
+err_quit("str_cli: server terminated 
+prematurely");
+ }
+ Fputs(recvline, stdout);
+ }
+ int main(int argc, char **argv) {
+ int sock = 0;
+ struct sockaddr_in serv_addr;
+ char buffer[BUFFER_SIZE] = {0};
+ char inputbuf[BUFFER_SIZE] ;
+ sock = Socket(AF_INET, SOCK_STREAM, 0))
+ serv_addr.sin_family = AF_INET;
+ serv_addr.sin_port = htons(PORT);
+ Inet_pton(AF_INET, argv[1], &serv_addr.sin_addr)
+ Connect(sock, (struct sockaddr *)&serv_addr, 
+sizeof(serv_addr))
+ str_cli(stdin, sockfd);
+ Close(sock);
+ return 0;
+ }
