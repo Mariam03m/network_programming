@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <sys/select.h>
+
+#define PORT 8080
+ #define BUFFER_SIZE 1024
+
+int main() {
+    int sockfd;
+    struct sockaddr_in serv_addr;
+    char buffer[BUFFER_SIZE ];
+    fd_set readfds;
+
+    // Create socket
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    // Convert IPv4 and connect
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        perror("Invalid address");
+        exit(EXIT_FAILURE);
+    }
+
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("Connection Failed");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Connected to server. Type messages below:\n");
+
+    while (1) {
+        FD_ZERO(&readfds);
+        FD_SET(0, &readfds);         // stdin (keyboard input)
+        FD_SET(sockfd, &readfds);    // socket
+        int maxfd = sockfd;
+
+        // Wait for input or server response
+        select(maxfd + 1, &readfds, NULL, NULL, NULL);
+
+        // If user typed something
+        if (FD_ISSET(0, &readfds)) {
+            fgets(buffer, BUFFER_SIZE , stdin);
+            send(sockfd, buffer, strlen(buffer), 0);
+        }
+
+        // If server sent something
+        if (FD_ISSET(sockfd, &readfds)) {
+            int bytes = recv(sockfd, buffer, BUFFER_SIZE  - 1, 0);
+            if (bytes <= 0) {
+                printf("Server disconnected.\n");
+                break;
+            }
+            buffer[bytes] = '\0';
+            printf("Server: %s", buffer);
+        }
+    }
+
+    close(sockfd);
+    return 0;
+}
